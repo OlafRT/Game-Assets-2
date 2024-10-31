@@ -3,12 +3,16 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - Wall
+  - CinemachineTarget
+  - Destroyable
+  - Destroy
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Pickup
   - Water
   - UI
   - 
