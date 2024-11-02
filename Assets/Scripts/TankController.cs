@@ -23,6 +23,7 @@ public class TankController : MonoBehaviour
     private float currentSprint; // Current sprint value
     private bool isSprinting = false; // Flag to check if the tank is sprinting
     private bool isScriptEnabled = false; // Track if the script is enabled
+    private bool isCollidingWithWall = false; // Track if the tank is colliding with a wall
 
     private void Start()
     {
@@ -37,7 +38,7 @@ public class TankController : MonoBehaviour
 
     private void Update()
     {
-        // Check for "R" key press to toggle the scripts
+        // Check for "R" key press to toggle the rotation script on the bristles
         if (Input.GetKeyDown(KeyCode.R))
         {
             ToggleScripts();
@@ -63,8 +64,11 @@ public class TankController : MonoBehaviour
         // Update UI fill amount
         UpdateCooldownUI();
 
-        // Move the tank forward/backward
-        MoveTank(moveVertical);
+        // Move the tank forward/backward only if not colliding with a wall
+        if (!isCollidingWithWall)
+        {
+            MoveTank(moveVertical);
+        }
 
         // Rotate the tank
         RotateTank(moveHorizontal);
@@ -120,8 +124,7 @@ public class TankController : MonoBehaviour
     {
         if (!isSprinting)
         {
-            // Gradually regenerate sprint when not sprinting
-            currentSprint += (sprintDuration / sprintCooldown) * Time.deltaTime; // Regenerate sprint
+ currentSprint += Time.deltaTime; // Regenerate sprint
             currentSprint = Mathf.Min(currentSprint, sprintDuration); // Clamp to max sprint duration
             cooldownFill.fillAmount = currentSprint / sprintDuration; // Update UI fill amount
         }
@@ -134,13 +137,27 @@ public class TankController : MonoBehaviour
 
     private void MoveTank(float moveVertical)
     {
-        // Move the tank forward/backward
         transform.Translate(Vector3.forward * moveVertical * currentSpeed * Time.deltaTime);
     }
 
     private void RotateTank(float moveHorizontal)
     {
-        // Rotate the tank
         transform.Rotate(Vector3.up * moveHorizontal * rotationSpeed * Time.deltaTime);
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.tag == "Hardstop")
+        {
+            isCollidingWithWall = true;
+        }
+    }
+
+    private void OnCollisionExit(Collision collision)
+    {
+        if (collision.gameObject.tag == "Hardstop")
+        {
+            isCollidingWithWall = false;
+        }
     }
 }

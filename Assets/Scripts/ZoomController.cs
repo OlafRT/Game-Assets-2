@@ -16,7 +16,7 @@ public class ZoomController : MonoBehaviour
 
     private void Update()
     {
-        if (Mouse.current.middleButton.isPressed)
+        if (Mouse.current.rightButton.isPressed)
         {
             if (!isZoomingIn)
             {
