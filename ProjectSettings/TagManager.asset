@@ -12,6 +12,7 @@ TagManager:
   - Hardstop
   - Floor
   - DustMonster
+  - Ground
   layers:
   - Default
   - TransparentFX

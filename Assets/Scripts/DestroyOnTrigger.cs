@@ -19,11 +19,6 @@ public class DestroyOnTrigger : MonoBehaviour
             }
         }
 
-        // Optionally, you can check if the audioSource is assigned
-        if (audioSource == null)
-        {
-            Debug.LogWarning("AudioSource is not assigned. Please assign an AudioSource component in the inspector.");
-        }
     }
 
     private void OnTriggerEnter(Collider other)

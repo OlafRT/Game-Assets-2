@@ -26,11 +26,22 @@ public class DustMonster : MonoBehaviour
     private bool canBounce = true;
     private bool hasPlayedRunAwaySound = false; // Flag to track if the run away sound has been played
 
+    // Scaling variables
+    public float jumpScaleFactor = 1.5f; // Factor to scale up on jump (make it taller)
+    public float landScaleFactor = 0.75f; // Factor to scale down on landing (make it shorter)
+    public float scaleSpeed = 5f; // Speed of scaling
+    public float spawnRadius = 10f; // Radius for spawning dust prefabs
+    public int maxDustPrefabs = 20; // Maximum number of dust prefabs to spawn
+
+    private Vector3 originalScale; // Store the original scale of the monster
+    private int currentDustCount = 0; // Track the number of dust prefabs spawned
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         audioSource = GetComponent<AudioSource>();
-        StartCoroutine(PlayRandomSounds());
+        originalScale = transform.localScale; // Store the original scale
+        StartCoroutine(PlayRandomSounds()); // Start playing random sounds
         StartCoroutine(SpinAndLaunchCoroutine());
     }
 
@@ -57,7 +68,7 @@ public class DustMonster : MonoBehaviour
         }
 
         Vector3 direction = (transform.position - player.position).normalized; // Get the direction away from the player
-        
+
         // Add some randomness to the bounce direction
         float randomTurn = Random.Range(-turnAmount, turnAmount);
         Quaternion rotation = Quaternion.Euler(0, randomTurn, 0);
@@ -66,12 +77,19 @@ public class DustMonster : MonoBehaviour
         // Apply the bounce force
         rb.velocity = new Vector3(bounceDirection.x, bounceForce, bounceDirection.z);
 
-        // Rotate the monster to face the bounce direction
-        Quaternion targetRotation = Quaternion.LookRotation(bounceDirection);
-        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 5f); // Smooth rotation
+        // Scale up during the jump
+        StartCoroutine(ScaleOverTime(new Vector3(originalScale.x, originalScale.y * jumpScaleFactor, originalScale.z), scaleSpeed));
+
+        // Rotate the monster to face the bounce direction smoothly
+        Quaternion targetRotation = Quaternion.LookRotation(bounceDirection, Vector3.up);
+        StartCoroutine(SmoothRotate(targetRotation, 0.5f)); // Use a coroutine for smooth rotation
 
         // Instantiate the dust prefab at the current position
-        Instantiate(dustPrefab, new Vector3(transform.position.x, transform.position.y - 0.8f, transform.position.z), Quaternion.identity);
+        if (currentDustCount < maxDustPrefabs)
+        {
+            Instantiate(dustPrefab, new Vector3(transform.position.x, transform.position.y - 0.8f, transform.position.z), Quaternion.identity);
+            currentDustCount++;
+        }
 
         // Play a random bounce sound
         PlayBounceSound();
@@ -79,6 +97,21 @@ public class DustMonster : MonoBehaviour
         // Start the cooldown
         canBounce = false;
         StartCoroutine(BounceCooldown());
+    }
+
+    private IEnumerator SmoothRotate(Quaternion targetRotation, float duration)
+    {
+        float timeElapsed = 0f;
+        Quaternion initialRotation = transform.rotation;
+
+        while (timeElapsed < duration)
+        {
+            transform.rotation = Quaternion.Slerp(initialRotation, targetRotation, timeElapsed / duration);
+            timeElapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        transform.rotation = targetRotation; // Ensure we end at the target rotation
     }
 
     private void PlayBounceSound()
@@ -94,25 +127,23 @@ public class DustMonster : MonoBehaviour
     {
         yield return new WaitForSeconds(bounceCooldown);
         canBounce = true;
-        hasPlayedRunAwaySound = false; // Reset the flag after cooldown to allow sound to play again if needed
     }
 
-    private IEnumerator PlayRandomSounds()
+    private IEnumerator ScaleOverTime(Vector3 targetScale, float speed)
     {
-        while (true)
-        {
-            yield return new WaitForSeconds(Random.Range(randomSoundMinInterval, randomSoundMaxInterval));
-            PlayRandomSound();
-        }
-    }
+        float timeElapsed = 0f;
+        Vector3 initialScale = transform.localScale;
 
-    private void PlayRandomSound()
-    {
-        if (randomSounds.Length > 0)
+        while (timeElapsed < 1f)
         {
-            AudioClip soundToPlay = randomSounds[Random.Range(0, randomSounds.Length)];
-            audioSource.PlayOneShot(soundToPlay);
+            float t = timeElapsed;
+            t = t * t * (3f - 2f * t); // Smoothstep function
+            transform.localScale = Vector3.Lerp(initialScale, targetScale, t);
+            timeElapsed += Time.deltaTime * speed;
+            yield return null;
         }
+
+        transform.localScale = targetScale;
     }
 
     private IEnumerator SpinAndLaunchCoroutine()
@@ -120,23 +151,20 @@ public class DustMonster : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(spinLaunchInterval);
-            StartCoroutine(SpinAndLaunch());
+            SpinAndLaunch();
         }
     }
 
-    private IEnumerator SpinAndLaunch()
+    private void SpinAndLaunch()
     {
+        // Play the spin launch sound
         if (spinLaunchSound != null)
         {
-            audioSource.PlayOneShot(spinLaunchSound); // Play the spin launch sound
+            audioSource.PlayOneShot(spinLaunchSound);
         }
 
-        float spinAngle = 360f / spinCount;
-        for (int i = 0; i < spinCount; i++)
-        {
-            transform.Rotate(0, spinAngle, 0);
-            yield return new WaitForSeconds(spinDuration / spinCount);
-        }
+        // Spin the monster
+        StartCoroutine(SpinOverTime(spinDuration));
 
         // Launch the prefab in all directions
         for (int i = 0; i < 10; i++)
@@ -146,27 +174,49 @@ public class DustMonster : MonoBehaviour
         }
     }
 
-    private void OnCollisionEnter(Collision collision)
+    private IEnumerator SpinOverTime(float duration)
     {
-        // Check for collisions with the floor or walls
-        if (collision.gameObject.CompareTag("Floor") || collision.gameObject.CompareTag("Wall"))
+        float timeElapsed = 0f;
+        float spinAmount = spinCount * 360f;
+
+        while (timeElapsed < duration)
         {
-            // You can add additional logic here if needed
+            float t = timeElapsed / duration;
+            float spin = spinAmount * t;
+            transform.Rotate(Vector3.up, spin);
+            timeElapsed += Time.deltaTime;
+            yield return null;
         }
     }
 
-    private void FixedUpdate()
+    private IEnumerator PlayRandomSounds()
     {
-        // Check for nearby DustMonsters
-        Collider[] nearbyMonsters = Physics.OverlapSphere(transform.position, 5f);
-        foreach (Collider nearbyMonster in nearbyMonsters)
+        while (true)
         {
-            if (nearbyMonster.gameObject != gameObject && nearbyMonster.gameObject.CompareTag("DustMonster"))
+            yield return new WaitForSeconds(Random.Range(randomSoundMinInterval, randomSoundMaxInterval));
+            if (randomSounds.Length > 0)
             {
-                // Move towards the nearby monster
-                Vector3 direction = (nearbyMonster.transform.position - transform.position).normalized;
-                rb.velocity = direction * 2f;
+                AudioClip soundToPlay = randomSounds[Random.Range(0, randomSounds.Length)];
+                audioSource.PlayOneShot(soundToPlay);
             }
         }
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        // Check if the monster has landed
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            // Scale down on landing
+            StartCoroutine(ScaleOverTime(new Vector3(originalScale.x, originalScale.y * landScaleFactor, originalScale.z), scaleSpeed));
+
+            // Wait for a short delay before scaling back to the original size
+            Invoke("ScaleBackToOriginal", 0.5f);
+        }
+    }
+
+    private void ScaleBackToOriginal()
+    {
+        StartCoroutine(ScaleOverTime(originalScale, scaleSpeed));
     }
 }

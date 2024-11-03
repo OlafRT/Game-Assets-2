@@ -4,8 +4,6 @@ public class GrabStuff : MonoBehaviour
 {
     [SerializeField] private KeyCode throwKey = KeyCode.Space; // Key to throw the object
     [SerializeField] private KeyCode grabKey = KeyCode.E; // Key to pick up the object
-    [SerializeField] private KeyCode rotateUpKey = KeyCode.UpArrow; // Key to rotate up
-    [SerializeField] private KeyCode rotateDownKey = KeyCode.DownArrow; // Key to rotate down
     [SerializeField] private float grabDistance = 10f; // Maximum distance to grab
     [SerializeField] private float throwForce = 10f; // Force to apply when throwing
     [SerializeField] private float rotationSpeed = 100f; // Speed of rotation
