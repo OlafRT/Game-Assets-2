@@ -9,7 +9,7 @@ public class PauseManager : MonoBehaviour
     public GameObject pauseMenuCanvas;
 
     private bool isPaused = false;
-    private AudioSource[] allAudioSources;
+    private List<AudioSource> allAudioSources = new List<AudioSource>(); // Change to List
     private ParticleSystem[] allParticleSystems;
     private VideoPlayer[] allVideoPlayers;
 
@@ -23,7 +23,7 @@ public class PauseManager : MonoBehaviour
             pauseMenuCanvas.SetActive(false);
 
         // Find all audio sources, particle systems, and video players in the scene
-        allAudioSources = FindObjectsOfType<AudioSource>();
+        allAudioSources.AddRange(FindObjectsOfType<AudioSource>()); // Use AddRange for List
         allParticleSystems = FindObjectsOfType<ParticleSystem>();
         allVideoPlayers = FindObjectsOfType<VideoPlayer>();
 
@@ -51,6 +51,11 @@ public class PauseManager : MonoBehaviour
         Cursor.lockState = isPaused ? CursorLockMode.None : CursorLockMode.Locked;
         Cursor.visible = isPaused;
 
+        // Refresh audio sources, particle systems, and video players
+        allAudioSources = new List<AudioSource>(FindObjectsOfType<AudioSource>()); // Reinitialize the list
+        allParticleSystems = FindObjectsOfType<ParticleSystem>();
+        allVideoPlayers = FindObjectsOfType<VideoPlayer>();
+
         // Pause or resume other game elements
         PauseOrResumeAudio(isPaused);
         PauseOrResumeParticles(isPaused);
@@ -65,10 +70,13 @@ public class PauseManager : MonoBehaviour
     {
         foreach (AudioSource audioSource in allAudioSources)
         {
-            if (pause)
-                audioSource.Pause();
-            else
-                audioSource.UnPause();
+            if (audioSource != null) // Check if the audioSource is not null
+            {
+                if (pause)
+                    audioSource.Pause();
+                else
+                    audioSource.UnPause();
+            }
         }
     }
 

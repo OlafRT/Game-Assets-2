@@ -11,34 +11,38 @@ public class RobotVacuum : MonoBehaviour
 
     void Start()
     {
-        rb = GetComponent<Rigidbody>();
-        targetRotation = transform.rotation;
+        rb = GetComponent<Rigidbody>(); // getting the rigidbody
+        targetRotation = transform.rotation;  // setting the target rotation to the current rotation
+
     }
 
-    void Update()
+    void Update()  // This is called every frame
+
     {
-        if (isMoving)
+        if (isMoving)   // If it's moving
+
         {
-            MoveForward();
+            MoveForward();   // Move forward
+
         }
-
-        transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+        transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);  // Rotate towards the target rotation
     }
 
-    void MoveForward()
+    void MoveForward() 
     {
-        rb.MovePosition(rb.position + transform.forward * moveSpeed * Time.deltaTime);
+        rb.MovePosition(rb.position + transform.forward * moveSpeed * Time.deltaTime);  // Move forward at the speed
+
     }
 
-    void OnCollisionEnter(Collision collision)
+    void OnCollisionEnter(Collision collision)   // When it collides with something
     {
-        if (collision.gameObject.CompareTag("Wall"))
+        if (collision.gameObject.CompareTag("Wall"))   // If it hits a wall
         {
-            TurnAround();
+            TurnAround();   // Turn around... Kinda obvious?
         }
     }
 
-    private void TurnAround()
+    private void TurnAround() 
     {
         // Random angle between -30 and 30 degrees
         float randomAngle = Random.Range(-30f, 30f);
