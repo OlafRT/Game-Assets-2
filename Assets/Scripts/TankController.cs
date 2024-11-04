@@ -9,6 +9,7 @@ public class TankController : MonoBehaviour
     public float sprintDuration = 10f; // Duration of the sprint
     public float sprintCooldown = 5f; // Cooldown time after sprinting
     public float rotationSpeed = 200f; // Rotation speed
+    public float jumpHeight = 5f; // Height of the jump
 
     // UI Elements
     public Image cooldownFill; // Reference to the cooldown fill image
@@ -24,9 +25,13 @@ public class TankController : MonoBehaviour
     private bool isSprinting = false; // Flag to check if the tank is sprinting
     private bool isScriptEnabled = false; // Track if the script is enabled
     private bool isCollidingWithWall = false; // Track if the tank is colliding with a wall
+    private bool isGrounded = true; // Track if the tank is on the ground
+
+    private Rigidbody rb; // Reference to the Rigidbody component
 
     private void Start()
     {
+        rb = GetComponent<Rigidbody>(); // Get the Rigidbody component
         currentSpeed = speed; // Initialize current speed
         currentSprint = sprintDuration; // Start with full sprint
         cooldownFill.fillAmount = 1; // Initialize cooldown fill to full
@@ -72,6 +77,12 @@ public class TankController : MonoBehaviour
 
         // Rotate the tank
         RotateTank(moveHorizontal);
+
+        // Jumping logic
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
+        {
+            Jump();
+        }
     }
 
     private void ToggleScripts()
@@ -108,7 +119,7 @@ public class TankController : MonoBehaviour
         if (currentSprint <= 0)
         {
             StopSprinting();
-        }
+ }
     }
 
     private void StopSprinting()
@@ -124,7 +135,7 @@ public class TankController : MonoBehaviour
     {
         if (!isSprinting)
         {
- currentSprint += Time.deltaTime; // Regenerate sprint
+            currentSprint += Time.deltaTime; // Regenerate sprint
             currentSprint = Mathf.Min(currentSprint, sprintDuration); // Clamp to max sprint duration
             cooldownFill.fillAmount = currentSprint / sprintDuration; // Update UI fill amount
         }
@@ -145,11 +156,22 @@ public class TankController : MonoBehaviour
         transform.Rotate(Vector3.up * moveHorizontal * rotationSpeed * Time.deltaTime);
     }
 
+    private void Jump()
+    {
+        rb.AddForce(Vector3.up * jumpHeight, ForceMode.Impulse);
+        isGrounded = false;
+    }
+
     private void OnCollisionEnter(Collision collision)
     {
         if (collision.gameObject.tag == "Hardstop")
         {
             isCollidingWithWall = true;
+        }
+
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            isGrounded = true;
         }
     }
 
@@ -158,6 +180,11 @@ public class TankController : MonoBehaviour
         if (collision.gameObject.tag == "Hardstop")
         {
             isCollidingWithWall = false;
+        }
+
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            isGrounded = false;
         }
     }
 }

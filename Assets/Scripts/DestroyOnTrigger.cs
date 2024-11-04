@@ -1,25 +1,11 @@
 using UnityEngine;
 
+    // This script is functioning  as intended. Could probably be improved somehow...
 public class DestroyOnTrigger : MonoBehaviour
 {
-    public Collider[] triggerColliders; // Array of trigger colliders
-    public string targetTag = "Destroy"; // Tag of objects to destroy
-    public AudioClip[] destructionSounds; // Array of sound clips for destruction
-    public AudioSource audioSource; // Reference to an existing AudioSource component
-
-    private void Start()
-    {
-        // Check if all trigger colliders are set as triggers
-        foreach (var collider in triggerColliders)
-        {
-            if (collider != null && !collider.isTrigger)
-            {
-                // You could keep this check if needed for debugging purposes
-                // Debug.LogWarning($"{collider.name} is not a trigger collider. Please ensure all colliders are set as triggers.");
-            }
-        }
-
-    }
+    public string targetTag = "Destroy"; // Tag of objects to destroy, we only want to destroy the ones that have this tag!!!!!
+    public AudioClip[] destructionSounds; // Array of sound clips for destruction, to make it more fun to destroy stuff!
+    public AudioSource audioSource; // AudioSource component on the object we use to destroy things
 
     private void OnTriggerEnter(Collider other)
     {

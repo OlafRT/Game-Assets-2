@@ -3,12 +3,16 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class ButtonInteraction : MonoBehaviour
+
+    // This script is working as intended and doesn't really need any work to improve it.
+
 {
-    public PlayerSwitcher playerSwitcher; // Assign the PlayerSwitcher script in the inspector
+    public PlayerSwitcher playerSwitcher; // PlayerSwitcher script that will be assigned in the inspector,  this script is responsible for switching between the player mode
+
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player")) // Ensure your player has the tag "Player"
+        if (other.CompareTag("Player")) // Ensure player has the tag "Player"
         {
             playerSwitcher.ShowPrompt(); // Show the control prompt when entering the zone
         }
@@ -25,8 +29,7 @@ public class ButtonInteraction : MonoBehaviour
 
     private void Update()
     {
-        // Check for input to switch players when the appropriate prompt is active
-        if (Input.GetKeyDown(KeyCode.E))
+        if (Input.GetKeyDown(KeyCode.E)) // Check for input to switch player mode when the appropriate prompt is active
         {
             if (playerSwitcher.controlPrompt.activeSelf || playerSwitcher.exitPrompt.activeSelf)
             {

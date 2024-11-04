@@ -49,7 +49,7 @@ public class RemoteControl : MonoBehaviour
         VideoPlayer videoPlayer = tv.GetComponent<VideoPlayer>();
         if (videoPlayer != null)
         {
-            videoPlayer.Stop(); // Stop the video when turning off the TV
+            videoPlayer.Pause(); // Pause the video when turning off the TV
             isTVOn = false; // Update the TV state
             UpdateUIText(); // Update the UI text
         }

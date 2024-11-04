@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
+    // this script is not working as intended, needs work to function properly... It's currently unused in the project
 public class DOFCamera : MonoBehaviour
 {
     public Camera mainCamera; // Main camera reference
