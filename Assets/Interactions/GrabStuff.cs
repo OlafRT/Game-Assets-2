@@ -1,4 +1,5 @@
 using UnityEngine;
+using TMPro; // Make sure to include this for TextMeshPro
 
 public class GrabStuff : MonoBehaviour
 {
@@ -7,6 +8,8 @@ public class GrabStuff : MonoBehaviour
     [SerializeField] private float grabDistance = 10f; // Maximum distance to grab
     [SerializeField] private float throwForce = 10f; // Force to apply when throwing
     [SerializeField] private float rotationSpeed = 100f; // Speed of rotation
+    [SerializeField] private TMP_Text interactionText; // Reference to the TextMeshPro UI text
+    [SerializeField] private string interactionMessage = "E"; // Message to display
 
     private Rigidbody targetRigidbody;
     private Transform objectTransform;
@@ -14,6 +17,7 @@ public class GrabStuff : MonoBehaviour
     private void Awake()
     {
         objectTransform = transform;
+        HideInteractionText(); // Initially hide the interaction text
     }
 
     private void Update()
@@ -23,10 +27,12 @@ public class GrabStuff : MonoBehaviour
         {
             HandleThrowInput();
             HandleRotationInput(); // Check for rotation input when an object is grabbed
+            HideInteractionText(); // Hide interaction text when holding an object
         }
         else
         {
             HandleGrabInput();
+            CheckForInteractable(); // Check for interactable objects
         }
     }
 
@@ -49,11 +55,11 @@ public class GrabStuff : MonoBehaviour
     private void HandleRotationInput()
     {
         // Check for rotation input using the customizable keys
-    if (Input.GetAxis("Mouse ScrollWheel") > 0) // Scrolling up
+        if (Input.GetAxis("Mouse ScrollWheel") > 0) // Scrolling up
         {
             RotateObject(1); // Rotate up
         }
-    else if (Input.GetAxis("Mouse ScrollWheel") < 0) // Scrolling down
+        else if (Input.GetAxis("Mouse ScrollWheel") < 0) // Scrolling down
         {
             RotateObject(-1); // Rotate down
         }
@@ -103,5 +109,51 @@ public class GrabStuff : MonoBehaviour
         {
             targetRigidbody.transform.Rotate(Vector3.right, rotationAmount);
         }
+    }
+
+    private void CheckForInteractable()
+    {
+        // Perform a raycast to check for interactable objects
+        if (Physics.Raycast(objectTransform.position, objectTransform.forward, out RaycastHit hitInfo, grabDistance))
+        {
+            IInteractable interactable = hitInfo.collider.GetComponent<IInteractable>();
+            if (interactable != null)
+            {
+                ShowInteractionText(true); // Show the interaction text
+                // Check for interaction input
+                if (Input.GetKeyDown(grabKey)) // Use the grab key for interaction
+                {
+                    interactable.Interact(); // Call the interact method of the target
+                }
+            }
+            else
+            {
+                HideInteractionText(); // Hide the interaction text if not looking at an interactable object
+            }
+        }
+        else
+        {
+            HideInteractionText(); // Hide the interaction text if not looking at any object
+        }
+    }
+    private void ShowInteractionText(bool show)
+    {
+        interactionText.gameObject.SetActive(show);
+        if (show)
+        {
+            interactionText.text = interactionMessage; // Set the interaction message
+        }
+    }
+
+    private void HideInteractionText()
+    {
+        interactionText.gameObject.SetActive(false); // Hide the interaction text
+    }
+
+    // New method for interaction
+    public bool TryInteract(out RaycastHit hitInfo)
+    {
+        // Perform a raycast to check for objects within grab distance
+        return Physics.Raycast(objectTransform.position, objectTransform.forward, out hitInfo, grabDistance);
     }
 }
