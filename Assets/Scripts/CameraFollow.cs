@@ -1,71 +1,96 @@
 using UnityEngine;
 
 public class CameraFollow : MonoBehaviour
-
-    // This script still needs work to function better. It is currently a work in progress. Having an issue that the camera can still sometimes clip through the walls...
-
 {
+    [Header("Target to follow")]
     public Transform target; // The target for the camera to follow
-    public float distance = 40.0f; // Distance from the target
-    public float height = 20.0f; // Height above the target
-    public float rotationSpeed = 2.0f; // Speed of rotation
-    public float verticalRotationLimit = 20.0f; // Limit for vertical rotation, so that  the camera doesn't go upside down or clips through the floor
-    public LayerMask obstructionLayer; // Layer for walls and obstructions that we use to make sure the camera doesnt go outside the walls or other objects.
-    public float slideSmoothness = 1f; // Smoothness factor for sliding along walls,  higher is smoother but also more expensive and we are using this so the camera won't be as "snappy"
 
-    private float currentAngle = 0.0f; // Current angle around the target
-    private float currentVerticalAngle = 0.0f; // Current vertical angle
+    [Header("Camera Settings")]
+    public float distance = 5.0f; // Default distance from the target
+    public float rotationSpeed = 5.0f; // Speed of rotation
+    public float smoothSpeed = 0.1f; // Smoothness factor for camera movement
+    public LayerMask obstructionLayer; // Layer for walls and obstructions
+    public float wallOffset = 0.5f; // Offset to keep the camera away from walls
+
+    [Header("Vertical Rotation Limits")]
+    public float minVerticalAngle = -30.0f; // Minimum vertical angle
+    public float maxVerticalAngle = 30.0f; // Maximum vertical angle
+
+    [Header("Zoom Settings")]
+    public float minDistance = 2.0f; // Minimum distance for zooming in
+    public float maxDistance = 10.0f; // Maximum distance for zooming out
+    public float zoomSpeed = 2f; // Speed of zooming in/out
+    private float targetDistance; // Distance to the target camera position
+
+    private float currentAngle; // Current horizontal angle around the target
+    private float currentVerticalAngle; // Current vertical angle of the camera
 
     void Start()
     {
-        // Setting the initial camera position
-        UpdateCameraPosition();
+        currentAngle = transform.eulerAngles.y; // Initialize the current angle
+        currentVerticalAngle = 0.0f; // Initialize vertical angle
+        targetDistance = distance; // Initialize target distance
     }
 
     void LateUpdate()
     {
-        // Get mouse input for controlling the camera around the target
-        float mouseX = Input.GetAxis("Mouse X") * rotationSpeed; // Horizontal mouse movement
-        float mouseY = Input.GetAxis("Mouse Y") * rotationSpeed; // Vertical mouse movement
+        HandleRotation(); // Handle camera rotation based on input
+        HandleZoom(); // Handle zooming in and out
+        UpdateCameraPosition(); // Update the camera position
+    }
 
-        // Update the current angles based on mouse input
+    void HandleRotation()
+    {
+        // Get mouse input for controlling the camera rotation
+        float mouseX = Input.GetAxis("Mouse X") * rotationSpeed;
+        float mouseY = Input.GetAxis("Mouse Y") * rotationSpeed;
+
         currentAngle += mouseX; // Update the horizontal angle
-        currentVerticalAngle -= mouseY; // Update the vertical movement (inverted)
 
-        // Clamp the vertical rotation angle to avoid flipping over or clipping through the floor
-        currentVerticalAngle = Mathf.Clamp(currentVerticalAngle, -verticalRotationLimit, verticalRotationLimit);
+        // Update the vertical angle and clamp it
+        currentVerticalAngle -= mouseY; // Invert for natural movement
+        currentVerticalAngle = Mathf.Clamp(currentVerticalAngle, minVerticalAngle, maxVerticalAngle); // Clamp vertical angle
+    }
 
-        // Update the camera position and rotation
-        UpdateCameraPosition();
+    void HandleZoom()
+    {
+        // Check if the right mouse button is pressed for zooming in
+        if (Input.GetMouseButton(1)) // Right mouse button
+        {
+            targetDistance -= zoomSpeed * Time.deltaTime; // Zoom in
+        }
+        else
+        {
+            targetDistance += zoomSpeed * Time.deltaTime; // Zoom out
+        }
+
+        // Clamp the target distance to ensure it stays within min and max bounds
+        targetDistance = Mathf.Clamp(targetDistance, minDistance, maxDistance);
+
+        // Update the distance variable to smoothly transition
+        distance = Mathf.Lerp(distance, targetDistance, smoothSpeed);
     }
 
     void UpdateCameraPosition()
     {
-        // Calculate the desired position
-        Vector3 offset = new Vector3(0, height, -distance); // Offset from the target position
+        // Calculate the desired position based on the target's position and the current angles
+        Vector3 offset = new Vector3(0, 0, -distance); // Offset from the target position (no height adjustment)
         Quaternion rotation = Quaternion.Euler(currentVerticalAngle, currentAngle, 0); // Rotation based on angles
         Vector3 desiredPosition = target.position + rotation * offset; // Calculating the desired position
 
-        // Check for obstructions inbetween the camera and the target using raycasting
-        RaycastHit hit; // Store information about what the raycast hits
-        if (Physics.Raycast(target.position, rotation * Vector3.back, out hit, distance, obstructionLayer))
-        {
-            // If there is an obstruction, calculate a slide position
-            Vector3 slidePosition = hit.point + hit.normal * 0.5f; // Offset slightly from the wall to avoid the clipping
+        // Check for obstructions between the camera and the target
+        Vector3 direction = (desiredPosition - target.position).normalized; // Direction from target to desired position
+        float distanceToTarget = Vector3.Distance(desiredPosition, target.position);
 
-            // Maintain the camera height and the current vertical angle
-            slidePosition.y = target.position.y + height; // Set the y position to the target's height plus offset
-
-            // Smoothly transition to the slide position but keep the vertical angle unchanged
-            transform.position = Vector3.Lerp(transform.position, slidePosition, slideSmoothness);
-        }
-        else
+        // Raycast to check for walls in the direction of the desired position
+        if (Physics.Raycast(target.position, direction, out RaycastHit hit, distanceToTarget, obstructionLayer))
         {
-            // If no obstruction, set the camera to the desired position
-            transform.position = Vector3.Lerp(transform.position, desiredPosition, slideSmoothness);
+            // If we hit something, adjust the position to be closer to the target
+            desiredPosition = hit.point + hit.normal * wallOffset; // Offset slightly from the wall
         }
 
-        // Set the camera to look at the target, maintaining the current vertical angle
-        transform.LookAt(target.position + Vector3.up * height); // Adjust look at to account for height
+        // Smoothly move the camera to the desired position
+        transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed);
+        transform.LookAt(target.position); // Look at the target
     }
 }

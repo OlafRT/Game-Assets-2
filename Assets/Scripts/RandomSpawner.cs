@@ -17,7 +17,7 @@ public class RandomSpawner : MonoBehaviour
     {
         if (plane == null)
         {
-            Debug.LogWarning("No plane assigned for spawning.");
+            Debug.LogWarning("No plane assigned for spawning!!!!!");
             return;
         }
 
@@ -25,7 +25,7 @@ public class RandomSpawner : MonoBehaviour
         Renderer planeRenderer = plane.GetComponent<Renderer>();
         if (planeRenderer == null)
         {
-            Debug.LogWarning("The assigned plane does not have a Renderer component.");
+            Debug.LogWarning("The assigned plane does not have a Renderer component... Moron!");
             return;
         }
 
@@ -55,7 +55,7 @@ public class RandomSpawner : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("No objects to spawn assigned in the array.");
+            Debug.LogWarning("No objects to spawn assigned in the array. So... you know, maybe put some?");
         }
     }
 }

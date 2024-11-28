@@ -11,10 +11,11 @@ public class TankController : MonoBehaviour
     public float rotationSpeed = 200f; // Rotation speed
     public float jumpHeight = 5f; // Height of the jump
 
-    // UI Elements
+    [Header("UI")]
     public Image cooldownFill; // Reference to the cooldown fill image
 
-    // References to the GameObjects and their scripts
+
+    [Header("GameObjects with Scripts to toggle")]
     public GameObject object1; // First GameObject
     public GameObject object2; // Second GameObject
     private Rotation script1; // The script you want to toggle on object1
@@ -119,7 +120,7 @@ public class TankController : MonoBehaviour
         if (currentSprint <= 0)
         {
             StopSprinting();
- }
+        }
     }
 
     private void StopSprinting()
@@ -187,4 +188,9 @@ public class TankController : MonoBehaviour
             isGrounded = false;
         }
     }
+    public void SetCollisionState(bool isColliding)
+    {
+        isCollidingWithWall = isColliding; // Update the collision state
+    }
+    
 }

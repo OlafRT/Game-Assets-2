@@ -9,6 +9,8 @@ namespace StarterAssets
 #if ENABLE_INPUT_SYSTEM
 	[RequireComponent(typeof(PlayerInput))]
 #endif
+
+
 	public class FirstPersonController : MonoBehaviour
 	{
 		[Header("Player")]
@@ -51,11 +53,17 @@ namespace StarterAssets
 		[Tooltip("How far in degrees can you move the camera down")]
 		public float BottomClamp = -90.0f;
 
+		[Header("Animation")]
+		[Tooltip("Animator component controlling the character animations")]
+		public Animator animatorComponent;
+		private float _turnDirection = 0f; // for turning left or right
+		private float _speed = 0f; // for walk/idle blend tree
+		public Transform neckJoint; // Reference to the neck joint of the character rig
+
 		// cinemachine
 		private float _cinemachineTargetPitch;
 
 		// player
-		private float _speed;
 		private float _rotationVelocity;
 		private float _verticalVelocity;
 		private float _terminalVelocity = 53.0f;
@@ -64,7 +72,6 @@ namespace StarterAssets
 		private float _jumpTimeoutDelta;
 		private float _fallTimeoutDelta;
 
-	
 #if ENABLE_INPUT_SYSTEM
 		private PlayerInput _playerInput;
 #endif
@@ -78,11 +85,11 @@ namespace StarterAssets
 		{
 			get
 			{
-				#if ENABLE_INPUT_SYSTEM
+#if ENABLE_INPUT_SYSTEM
 				return _playerInput.currentControlScheme == "KeyboardMouse";
-				#else
+#else
 				return false;
-				#endif
+#endif
 			}
 		}
 
@@ -99,32 +106,58 @@ namespace StarterAssets
 		{
 			_controller = GetComponent<CharacterController>();
 			_input = GetComponent<StarterAssetsInputs>();
-#if ENABLE_INPUT_SYSTEM
-			_playerInput = GetComponent<PlayerInput>();
-#else
-			Debug.LogError( "Starter Assets package is missing dependencies. Please use Tools/Starter Assets/Reinstall Dependencies to fix it");
-#endif
 
-			// reset our timeouts on start
+		#if ENABLE_INPUT_SYSTEM
+			_playerInput = GetComponent<PlayerInput>();
+		#else
+			Debug.LogError("Starter Assets package is missing dependencies. Please use Tools/Starter Assets/Reinstall Dependencies to fix it");
+		#endif
+
+			// Reset our timeouts on start
 			_jumpTimeoutDelta = JumpTimeout;
 			_fallTimeoutDelta = FallTimeout;
+
+			// Use the public Animator reference instead of the local one
+			if (animatorComponent == null)
+			{
+				animatorComponent = GetComponentInChildren<Animator>();  // Get the Animator from the child object if not assigned
+			}
+			
+			// Ensure the Animator is assigned
+			if (animatorComponent == null)
+			{
+				Debug.LogError("Animator is not assigned!");
+			}
 		}
 
 		private void Update()
 		{
+			GroundedCheck(); // Check grounded state first
 			JumpAndGravity();
-			GroundedCheck();
 			Move();
+			UpdateAnimations();
 		}
 
 		private void LateUpdate()
 		{
-			CameraRotation();
+			CameraRotation(); // Handle camera rotation
+			UpdateNeckJointRotation(); // Update neck joint rotation
+		}
+
+		private void UpdateNeckJointRotation()
+		{
+			if (neckJoint != null)
+			{
+				// Adjust neck joint rotation based on camera pitch
+				float horizontalRotation = _input.look.x; // Get horizontal look input (left/right)
+				
+				// Combine the rotations
+				neckJoint.localRotation = Quaternion.Euler(0, horizontalRotation, -_cinemachineTargetPitch); // Negate the Z-axis for up/down
+			}
 		}
 
 		private void GroundedCheck()
 		{
-			// set sphere position, with offset
 			Vector3 spherePosition = new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z);
 			Grounded = Physics.CheckSphere(spherePosition, GroundedRadius, GroundLayers, QueryTriggerInteraction.Ignore);
 		}
@@ -136,7 +169,7 @@ namespace StarterAssets
 			{
 				//Don't multiply mouse input by Time.deltaTime
 				float deltaTimeMultiplier = IsCurrentDeviceMouse ? 1.0f : Time.deltaTime;
-				
+
 				_cinemachineTargetPitch += _input.look.y * RotationSpeed * deltaTimeMultiplier;
 				_rotationVelocity = _input.look.x * RotationSpeed * deltaTimeMultiplier;
 
@@ -148,77 +181,76 @@ namespace StarterAssets
 
 				// rotate the player left and right
 				transform.Rotate(Vector3.up * _rotationVelocity);
+
+				// Update neck joint rotation to match camera rotation
+				if (neckJoint != null)
+				{
+					neckJoint.localRotation = Quaternion.Euler(_cinemachineTargetPitch, 0, 0); // Adjust as needed
+				}
 			}
 		}
 
 		private void Move()
 		{
-			// set target speed based on move speed, sprint speed and if sprint is pressed
+			// Set target speed based on move speed, sprint speed and if sprint is pressed
 			float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
 
-			// a simplistic acceleration and deceleration designed to be easy to remove, replace, or iterate upon
-
-			// note: Vector2's == operator uses approximation so is not floating point error prone, and is cheaper than magnitude
-			// if there is no input, set the target speed to 0
+			// If no input, set target speed to 0 (idle)
 			if (_input.move == Vector2.zero) targetSpeed = 0.0f;
 
-			// a reference to the players current horizontal velocity
+			// Get the current horizontal speed based on the CharacterController's velocity
 			float currentHorizontalSpeed = new Vector3(_controller.velocity.x, 0.0f, _controller.velocity.z).magnitude;
 
+			// Offset and input magnitude for acceleration/deceleration
 			float speedOffset = 0.1f;
 			float inputMagnitude = _input.analogMovement ? _input.move.magnitude : 1f;
 
-			// accelerate or decelerate to target speed
+			// Smoothly interpolate between current speed and target speed
 			if (currentHorizontalSpeed < targetSpeed - speedOffset || currentHorizontalSpeed > targetSpeed + speedOffset)
 			{
-				// creates curved result rather than a linear one giving a more organic speed change
-				// note T in Lerp is clamped, so we don't need to clamp our speed
 				_speed = Mathf.Lerp(currentHorizontalSpeed, targetSpeed * inputMagnitude, Time.deltaTime * SpeedChangeRate);
-
-				// round speed to 3 decimal places
-				_speed = Mathf.Round(_speed * 1000f) / 1000f;
+				_speed = Mathf.Round(_speed * 1000f) / 1000f; // Round to 3 decimal places
 			}
 			else
 			{
 				_speed = targetSpeed;
 			}
 
-			// normalise input direction
+			// Determine the direction of movement based on input
 			Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, _input.move.y).normalized;
 
-			// note: Vector2's != operator uses approximation so is not floating point error prone, and is cheaper than magnitude
-			// if there is a move input rotate player when the player is moving
 			if (_input.move != Vector2.zero)
 			{
-				// move
 				inputDirection = transform.right * _input.move.x + transform.forward * _input.move.y;
 			}
 
-			// move the player
+			// Move the player using the CharacterController's Move method
 			_controller.Move(inputDirection.normalized * (_speed * Time.deltaTime) + new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
+
+			// Update animations based on movement and rotation
+			UpdateAnimations();
 		}
 
 		private void JumpAndGravity()
 		{
 			if (Grounded)
 			{
-				// reset the fall timeout timer
 				_fallTimeoutDelta = FallTimeout;
 
-				// stop our velocity dropping infinitely when grounded
+				// Reset vertical velocity when grounded
 				if (_verticalVelocity < 0.0f)
 				{
-					_verticalVelocity = -2f;
+					_verticalVelocity = -2f; // Small negative value to keep grounded
 				}
 
-				// Jump
+				// Check for jump input
 				if (_input.jump && _jumpTimeoutDelta <= 0.0f)
 				{
-					// the square root of H * -2 * G = how much velocity needed to reach desired height
-					_verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
+					_verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity); // Calculate jump velocity
+					animatorComponent.SetBool("Jump", true); // Set jump animation to true
 				}
 
-				// jump timeout
+				// Decrease jump timeout
 				if (_jumpTimeoutDelta >= 0.0f)
 				{
 					_jumpTimeoutDelta -= Time.deltaTime;
@@ -226,26 +258,93 @@ namespace StarterAssets
 			}
 			else
 			{
-				// reset the jump timeout timer
+				// Reset jump timeout when not grounded
 				_jumpTimeoutDelta = JumpTimeout;
 
-				// fall timeout
+				// Decrease fall timeout
 				if (_fallTimeoutDelta >= 0.0f)
 				{
 					_fallTimeoutDelta -= Time.deltaTime;
 				}
 
-				// if we are not grounded, do not jump
+				// Disable jump input when falling
 				_input.jump = false;
+
+				// If falling or grounded, set jump animation to false
+				if (_verticalVelocity < 0)
+				{
+					animatorComponent.SetBool("Jump", false);
+					animatorComponent.SetBool("Fall", true);  // Set falling animation to true
+				}
+				else
+				{
+					animatorComponent.SetBool("Jump", false);
+					animatorComponent.SetBool("Fall", false); // When grounded, no jump or fall animation
+				}
 			}
 
-			// apply gravity over time if under terminal (multiply by delta time twice to linearly speed up over time)
-			if (_verticalVelocity < _terminalVelocity)
+			// Always apply gravity
+			_verticalVelocity += Gravity * Time.deltaTime;
+
+			// Clamp vertical velocity to terminal velocity
+			if (_verticalVelocity < -_terminalVelocity)
 			{
-				_verticalVelocity += Gravity * Time.deltaTime;
+				_verticalVelocity = -_terminalVelocity; // Prevent falling too fast
 			}
 		}
 
+		private void UpdateAnimations()
+		{
+			if (animatorComponent != null)
+			{
+				// Update the Speed parameter for the blend tree (idle vs walk vs run)
+				animatorComponent.SetFloat("Speed", _speed);  // Update speed for walking or running
+
+				// Update the Turn parameter based on rotation velocity
+				if (_rotationVelocity != 0f)  // Player is turning
+				{
+					// Determine the direction of turn (left or right)
+					if (_rotationVelocity > 0f)  // Turning right
+					{
+						_turnDirection = 1f; // Right turn
+					}
+					else if (_rotationVelocity < 0f)  // Turning left
+					{
+						_turnDirection = -1f; // Left turn
+					}
+
+					// Set the Turn parameter to trigger turning animation
+					animatorComponent.SetFloat("Turn", _turnDirection);  // Set turn direction (left or right)
+				}
+				else // Not turning
+				{
+					animatorComponent.SetFloat("Turn", 0f);  // Set to 0 if not turning
+				}
+
+				// Set Jump and Fall states based on vertical velocity
+				if (_verticalVelocity > 0f) // Jumping up
+				{
+					animatorComponent.SetBool("Jump", true);
+					animatorComponent.SetBool("Fall", false);  // If jumping, don't show falling animation
+				}
+				else if (_verticalVelocity < 0f) // Falling down
+				{
+					animatorComponent.SetBool("Jump", false);
+					animatorComponent.SetBool("Fall", true);  // If falling, show falling animation
+				}
+				else
+				{
+					animatorComponent.SetBool("Jump", false);
+					animatorComponent.SetBool("Fall", false); // When grounded, no jump or fall animation
+				}
+
+				// Reset Jump boolean when grounded
+				if (Grounded)
+				{
+					animatorComponent.SetBool("Jump", false); // Reset jump when grounded
+				}
+			}
+		}
 		private static float ClampAngle(float lfAngle, float lfMin, float lfMax)
 		{
 			if (lfAngle < -360f) lfAngle += 360f;
@@ -258,10 +357,7 @@ namespace StarterAssets
 			Color transparentGreen = new Color(0.0f, 1.0f, 0.0f, 0.35f);
 			Color transparentRed = new Color(1.0f, 0.0f, 0.0f, 0.35f);
 
-			if (Grounded) Gizmos.color = transparentGreen;
-			else Gizmos.color = transparentRed;
-
-			// when selected, draw a gizmo in the position of, and matching radius of, the grounded collider
+			Gizmos.color = Grounded ? transparentGreen : transparentRed;
 			Gizmos.DrawSphere(new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z), GroundedRadius);
 		}
 	}

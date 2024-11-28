@@ -4,10 +4,13 @@ using UnityEngine;
 
 public class ButtonInteraction : MonoBehaviour
 
+    // This script has a kind of misleading name, as it doesn’t really have anything to do with a button, but the way it works is that when the player is within a trigger zone, 
+    // it enables a text element on the canvas that tells you to press “E” to activate. It checks for if the E key is pressed, and then does the SwitchPlayer function on the PlayerSwitcher script. 
+    // The reason for it being called a button is that it is supposed to be in the area of a button on the control panel that takes over the controls of the robot vacuum.
     // This script is working as intended and doesn't really need any work to improve it.
 
 {
-    public PlayerSwitcher playerSwitcher; // PlayerSwitcher script that will be assigned in the inspector,  this script is responsible for switching between the player mode
+    public PlayerSwitcher playerSwitcher; // PlayerSwitcher script. Assign in the inspector.  This script is responsible for switching between the player mode
 
 
     private void OnTriggerEnter(Collider other)

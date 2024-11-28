@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Video;
+using UnityEngine.SceneManagement; // Add this for scene management
 
 public class PauseManager : MonoBehaviour
 {
     public GameObject pauseMenuCanvas;
+    public string mainMenuSceneName; // Set this in the Inspector
 
     private bool isPaused = false;
-    private List<AudioSource> allAudioSources = new List<AudioSource>(); // Change to List
+    private List<AudioSource> allAudioSources = new List<AudioSource>();
     private ParticleSystem[] allParticleSystems;
     private VideoPlayer[] allVideoPlayers;
 
@@ -23,7 +25,7 @@ public class PauseManager : MonoBehaviour
             pauseMenuCanvas.SetActive(false);
 
         // Find all audio sources, particle systems, and video players in the scene
-        allAudioSources.AddRange(FindObjectsOfType<AudioSource>()); // Use AddRange for List
+        allAudioSources.AddRange(FindObjectsOfType<AudioSource>());
         allParticleSystems = FindObjectsOfType<ParticleSystem>();
         allVideoPlayers = FindObjectsOfType<VideoPlayer>();
 
@@ -70,7 +72,7 @@ public class PauseManager : MonoBehaviour
     {
         foreach (AudioSource audioSource in allAudioSources)
         {
-            if (audioSource != null) // Check if the audioSource is not null
+            if (audioSource != null)
             {
                 if (pause)
                     audioSource.Pause();
@@ -117,5 +119,26 @@ public class PauseManager : MonoBehaviour
         // Code to exit the game
         Application.Quit();
     }
+
+    public void ReturnToMainMenu()
+    {
+        // Ensure Time.timeScale is reset before changing scenes
+        Time.timeScale = 1;
+
+        // Hide the cursor
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
+        // Load the main menu scene
+        if (!string.IsNullOrEmpty(mainMenuSceneName))
+        {
+            SceneManager.LoadScene(mainMenuSceneName);
+        }
+        else
+        {
+            Debug.LogWarning("Main menu scene name is not set in the Inspector!");
+        }
+    }
 }
+
 
