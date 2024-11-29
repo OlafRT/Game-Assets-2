@@ -30,7 +30,8 @@ ModelImporter:
     animationScaleError: 0.5
     animationWrapMode: 0
     extraExposedTransformPaths: []
-    extraUserProperties: []
+    extraUserProperties:
+    - '#BAKERY{"meshName":["GA2:GlassWindowsGlassWindow_LivingArea","GA2:GlassWindowsGlassWindow_MainBedroom","GA2:FloorsFloor_BathroomBedroom","GA2:FloorsFloor_Terrace","GA2:GlassWindowsGlassWindow_SmallBedroom","GA2:GlassWindowsGlassWindow_Kitchen","GA2:Floor_BathroomFloors","GA2:WallsWindowWallSmallRoom","GA2:WallsWindowWall_MainBedroom","GA2:WallsWindowWall_LivingArea","GA2:WallsWindowWall_Kitchen","GA2:WallsWindowWall_Bathroom","GA2:WallsWall_BetweenBathrooms","GA2:WallsWall_02","GA2:WallsWall_01","GA2:WallsDoorWall_SmallBedroom","GA2:WallsDoorWall_MainBedroom","GA2:WallsDoorWall_BedroomBathroom","GA2:WallsDoorWall_Bathroom","GA2:SlidingGlassDoorSlidingDoor_02","GA2:SlidingGlassDoorSlidingDoor_01","GA2:FrameSlidingGlassDoor","GA2:BackWallWalls","GA2:GlassWindow_BathroomGlassWindows","GA2:FloorsFloor_MainBedroom","GA2:FloorsFloor_LivingArea","GA2:FloorsFloor_SmallBedroom"],"padding":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"unwrapper":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}'
     clipAnimations: []
     isReadable: 0
   meshes:
@@ -48,7 +49,7 @@ ModelImporter:
     nodeNameCollisionStrategy: 1
     fileIdsGeneration: 2
     swapUVChannels: 0
-    generateSecondaryUV: 0
+    generateSecondaryUV: 1
     useFileUnits: 1
     keepQuads: 0
     weldVertices: 1

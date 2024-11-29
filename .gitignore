@@ -75,3 +75,8 @@ crashlytics-build.properties
 /Assets/Scenes/PreciousDebris
 /Assets/Bakery
 /Assets/Editor/x64/Bakery
+/Assets/BakeryLightmaps
+*.meta
+Assets/GameAssets/Bedroom/Bed/Blanket/Round fluffy carpet.FBX
+Assets/GameAssets/Pillow/Basket/Textures/basket_normal.png
+Assets/GameAssets/Remote/TV-Broadcast-Strato5.mp4

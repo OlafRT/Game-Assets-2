@@ -14,6 +14,11 @@ namespace StarterAssets
         [Tooltip("Speed of growth/shrink")]
         public float growthSpeed = 2f; // Speed of the scaling transition
 
+        [Header("Audio Settings")]
+        public AudioClip growSound; // Assign this in the Inspector
+        public AudioClip shrinkSound; // Assign this in the Inspector
+        private AudioSource audioSource; // AudioSource component
+
         [Header("References")]
         public FirstPersonController firstPersonController; // Assign this in the Inspector
 
@@ -39,6 +44,8 @@ namespace StarterAssets
                     Debug.LogError("FirstPersonController is not assigned and cannot be found on this GameObject.");
                 }
             }
+
+            audioSource = gameObject.AddComponent<AudioSource>(); // Add AudioSource component
 
             _targetScale = transform.localScale; // Initialize target scale
 
@@ -84,6 +91,12 @@ namespace StarterAssets
                 firstPersonController.Gravity = defaultGravity;
                 firstPersonController.GroundedRadius = defaultGroundedRadius;
 
+                // Play shrink sound
+                if (shrinkSound != null)
+                {
+                    audioSource.PlayOneShot(shrinkSound);
+                }
+
                 Debug.Log("Shrinking: Resetting to default values.");
             }
             else
@@ -97,6 +110,12 @@ namespace StarterAssets
                 firstPersonController.JumpHeight = 20f;
                 firstPersonController.Gravity = -120f;
                 firstPersonController.GroundedRadius = 4f;
+
+                // Play grow sound
+                if (growSound != null)
+                {
+                    audioSource.PlayOneShot(growSound);
+                }
 
                 Debug.Log("Growing: Setting new values.");
             }
