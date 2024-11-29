@@ -156,6 +156,12 @@ namespace StarterAssets
 			}
 		}
 
+		public void AdjustSpeed(float scaleRatio)
+		{
+			MoveSpeed = scaleRatio;
+			SprintSpeed= scaleRatio;
+		}
+
 		private void GroundedCheck()
 		{
 			Vector3 spherePosition = new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z);
